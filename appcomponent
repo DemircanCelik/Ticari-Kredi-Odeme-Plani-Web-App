@@ -1,0 +1,148 @@
+import { Component, OnInit } from '@angular/core';
+import { KrediService } from './kredi.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { NgForm } from '@angular/forms';
+import { Kredi } from './kredi';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
+})
+export class AppComponent implements OnInit{
+ 
+  
+  title = 'Ticari Krediler Ödeme Planı';
+  public currentDate: string = ''; 
+
+  public kredis: Kredi[] = [];
+  public editKredi: Kredi | null = null; 
+  public deleteKredi: Kredi | null = null;
+  silinecekKredilerList: any;
+  constructor(private krediService: KrediService){}
+  ngOnInit() {
+    this.getKredi();
+    this.getCurrentDate();
+
+  }
+
+  public getKredi(): void {
+    this.krediService.getKredi().subscribe(
+      (response: Kredi[]) => {
+        this.kredis = response;
+      },
+      (error : HttpErrorResponse) => {
+        alert(error.message);
+
+      }
+    );
+  }
+
+
+  public onAddKredi(addForm: NgForm): void{
+    document.getElementById('add-kredi-form')?.click();
+    this.krediService.addKredi(addForm.value).subscribe(
+      (response: Kredi) => {
+        console.log(response);
+        this.getKredi();
+        addForm.reset();
+
+      },
+      (error: HttpErrorResponse) => {
+        alert(error.message);
+        addForm.reset();
+
+      },
+    )
+  }
+
+  public onUpdateEmployee(kredi: Kredi): void{
+    this.krediService.updateKredi(kredi).subscribe(
+      (response: Kredi) => {
+        console.log(response);
+        this.getKredi();
+
+      },
+      (error: HttpErrorResponse) => {
+        alert(error.message);
+      },
+    )
+  }
+
+  public onDeleteKredi(krediId: number | undefined): void {
+    
+    this.kredis.forEach((a: any) => {
+      if(a.id === krediId){
+        let silinecekIndex = -1
+        silinecekIndex = this.kredis.findIndex((kredi: any) => kredi.id === a.id);
+        this.kredis.splice(silinecekIndex, 1);
+       }      
+      }
+    );
+    this.kredis = [...this.kredis];
+
+  }
+  
+  
+  public searchKredi(key: string): void {
+    console.log(key);
+    if (key) {
+        const idSearchResults: Kredi[] = [];
+
+        for (const kredi of this.kredis) {
+            if (kredi.id.toString().includes(key)) {
+                idSearchResults.push(kredi);
+                
+            }
+        }
+
+        this.kredis = idSearchResults;
+    } else {
+        this.getKredi(); 
+    }
+    
+}
+
+
+
+
+  public onOpenModal(kredi: Kredi | null, mode: string): void {
+    const container = document.getElementById('main-container');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.style.display = 'none';
+    button.setAttribute('data-toggle', 'modal');
+  
+    if (mode === 'add') {
+      button.setAttribute('data-target', '#addEmployeeModal');
+    }
+  
+    if (mode === 'edit' && kredi) {
+      this.editKredi = kredi;
+      button.setAttribute('data-target', '#updateEmployeeModal');
+    }
+  
+    if (mode === 'delete' && kredi) {
+      this.deleteKredi = kredi;
+      button.setAttribute('data-target', '#deleteEmployeeModal');
+    }
+  
+    container?.appendChild(button);
+    button.click();
+  }
+
+
+  
+  public getCurrentDate(): void {
+    const today = new Date();
+    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'numeric', day: 'numeric' };
+    this.currentDate = today.toLocaleDateString('tr-TR', options);
+  }
+
+
+
+
+  
+  
+  
+}
